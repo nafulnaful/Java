@@ -1,0 +1,30 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+{
+	"books":[
+		{
+			"isbn":"98789",
+			"title":"JSP입문",
+			"publish":"tis출판사",
+			"price":20000,
+			"published":"2021-08-05",
+			"bimage":"b.jpg"
+		},
+		{
+			"isbn":"88789",
+			"title":"Ajax입문",
+			"publish":"대림출판사",
+			"price":25000,
+			"published":"2021-08-05",
+			"bimage":"c.jpg"
+		},
+		{
+			"isbn":"78789",
+			"title":"jQuery입문",
+			"publish":"abc출판사",
+			"price":30000,
+			"published":"2021-07-15",
+			"bimage":"d.jpg"
+		}
+]
+}

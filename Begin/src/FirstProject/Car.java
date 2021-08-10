@@ -13,7 +13,7 @@ public class Car implements Serializable {
 	public Car() {
 
 	}
-
+	//CAR 데이터 꺼내오기
 	public Car(String b, String m, String l, String b2, String d, String p) {
 		this.brand = b;
 		this.model = m;
@@ -22,7 +22,7 @@ public class Car implements Serializable {
 		this.driven = d;
 		this.pwd = p;
 	}
-
+	
 	public String getBrand() {
 		return brand;
 	}

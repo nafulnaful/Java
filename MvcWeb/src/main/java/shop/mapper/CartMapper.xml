@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="shop.mapper.CartMapper">
+	<select id="selectCartByPnum" resultType="int"
+		parameterType="Cart">
+		select count(cartNum) from cart where idx=#{idx} and punm =#{pnum}
+		<!-- Cart에 담겨있는 idx값과 pnum값을 가져와서(getter메소드를 이용함) where절 인파라미터로 셋팅함 -->
+	</select>
+
+
+	<insert id="addCart" parameterType="Cart">
+		insert into cart(cartNum,
+		idx, pnum, oqty,indate)
+		values(cart_seq.nextval,#{idx},#{pnum},#{oqty}, sysdate)
+	</insert>
+	<!-- 장바구니 상품 수량 수정 -->
+	<update id="updateCartOqty" parameterType="Cart">
+		update cart set
+		oqty=oqty + #{oqty}
+		where idx=#{idx} and pnum=#{pnum}
+	</update>
+
+	<!-- 특정 회원의 장바구니 목록 가져오기 -->
+	<select id="getCart" resultType="Cart" parameterType="string">
+		<!-- select * from cart where idx=#{value} -->
+		select c.*, pname, pimage1, price, saleprice, point
+		(saleprice* oqty)
+		totalPrice,
+		(point *oqty) totalPoint
+		from cart c join product p
+		on c.pnum = p.pnum and c.idx=#{value}
+	</select>
+
+</mapper>

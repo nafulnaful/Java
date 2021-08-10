@@ -50,9 +50,7 @@ public class MyPage extends JPanel {
 
 		// ÇÚµé·¯ ºÎÂø
 		MypageHandler handler = new MypageHandler(this);
-		//lbUserInfo.addMouseListener(handler);
 		lbCarInfo.addMouseListener(handler);
-		//lbTalk.addMouseListener(handler);
 		lbLogout.addMouseListener(handler);
 		
 		lbUserInfo.addMouseListener(new MouseAdapter() {
@@ -60,7 +58,7 @@ public class MyPage extends JPanel {
 	    	public void mouseClicked(MouseEvent e) {
 	    		
 	    		super.mouseClicked(e);
-	    		JoinEdit joinEditF=new JoinEdit();
+	    		Join joinEditF=new Join();
 	    		joinEditF.setSize(400,600);
 	    		joinEditF.setVisible(true);
 	    	}

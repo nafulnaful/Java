@@ -14,7 +14,8 @@ public class JoinHandler extends MouseAdapter implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 	}// -----
-
+	
+	//마우스 커서 이동시 공백처리
 	@Override
 	public void mousePressed(MouseEvent e) {
 		Object o = e.getSource();

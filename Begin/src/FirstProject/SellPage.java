@@ -47,8 +47,6 @@ public class SellPage extends JPanel {
 		add(pCenter, "Center");
 		readFileCar("src/FirstProject/car.txt");
 
-		// Panel
-
 		// Label
 		lbTop = new JLabel("", new ImageIcon("./pj_img/상단바_내차팔기.png"), JLabel.CENTER);
 		pNorth.add(lbTop);
@@ -72,9 +70,6 @@ public class SellPage extends JPanel {
 
 		pCenter_W.setLayout(new GridLayout(0, 1, 5, 5));
 		pCenter_C.setLayout(new GridLayout(0, 1, 5, 5));
-
-		// pCenter_W.setBackground(Color.white);
-		// pCenter_C.setBackground(Color.white);
 
 		lbBrand = new JLabel("", new ImageIcon("./pj_img/브랜드명.png"), JLabel.CENTER);
 		lbModel = new JLabel("", new ImageIcon("./pj_img/모델명.png"), JLabel.CENTER);
@@ -194,10 +189,6 @@ public class SellPage extends JPanel {
 		buydate = buydate.trim();
 		km = km.trim();
 		pwd = pwd.trim();
-
-		System.out.println(brand);
-		System.out.println(model);
-		System.out.println(buydate);
 		
         mainF.card.show(mainF.pCenter, "내차구매");
         mainF.buyF.showCarTable();

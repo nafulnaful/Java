@@ -34,7 +34,7 @@ public class MainFrame extends JFrame {
 
 	// 로그인 x
 	boolean isLogin = false;
-
+////////////////////////////////////////////////////////////////////////////////////////
 	public MainFrame() {
 		super(":: Chachacha ::");
 		Container cp = this.getContentPane();
@@ -76,7 +76,7 @@ public class MainFrame extends JFrame {
 		pCenter.add("관심차량", likeF);
 		pCenter.add("마이페이지", mypageF);
 
-		// MyHandler 부착-------------------ㄱ
+		// MyHandler 부착-------------------
 		CarHandler handler = new CarHandler(this);
 		this.lbLogin.addMouseListener(handler);
 		this.lbMypage.addMouseListener(handler);
@@ -92,7 +92,7 @@ public class MainFrame extends JFrame {
 
 		// 창크기 고정
 		setResizable(false);
-
+////////////////////////////////////////////////////////////////////////////////////[GUI]////////////
 	}// 생성자------
 
 	private void readFile(String fileName) {

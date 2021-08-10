@@ -33,8 +33,7 @@ public class Join extends JFrame {
 
 	public Join() {
 		super(":: Join ::");
-		// 기본 회원 데이터 가져오기
-		readFile("src/FirstProject/user.txt");
+		
 		Container cp = this.getContentPane();
 		cp.add(p, "Center");
 		p.setBackground(Color.white);
@@ -118,6 +117,10 @@ public class Join extends JFrame {
 		tfId.setForeground(Color.LIGHT_GRAY);
 		tfTel.setForeground(Color.LIGHT_GRAY);
 		tfEmail.setForeground(Color.LIGHT_GRAY);
+		///////////////////////////////////////////////////////////////////////////////////////////[GUI]//////////////
+		
+		// 기본 회원 데이터 가져오기
+		readFile("src/FirstProject/user.txt");
 
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -135,7 +138,7 @@ public class Join extends JFrame {
 		tfTel.addMouseListener(handler);
 		tfEmail.addMouseListener(handler);
 
-	}// 생성자------
+	}// 생성자-------------------------------------------------------------------------------------------------------
 
 	/** 알림창 showMsg() */
 	public void showMsg(String message) {
@@ -170,8 +173,8 @@ public class Join extends JFrame {
 		}
 	}// -------------------
 
-	/** Join 정보등록 */
-	public void join() {
+		/** Join 정보등록 */
+		public void join() {
 		String name = tfName.getText();
 		String birth = tfBirth.getText();
 		String id = tfId.getText();
@@ -180,35 +183,39 @@ public class Join extends JFrame {
 		String tel = tfTel.getText();
 		String email = tfEmail.getText();
 
+		
 		/** 중복 체크 & 공백 체크 */
-		boolean isUse = idCheck(id);
-		if (!isUse) {
-			showMsg("다른 아이디를 입력하세요.");
-			tfId.requestFocus();
-			return;
-		} else if (name.trim().equals("") || birth.trim().equals("") || id.trim().equals("") || pwd.trim().equals("")
-				|| tel.trim().equals("") || email.trim().equals("")) {
-			showMsg("모든 정보를 입력하세요.");
-			return;
-		} else if (!cbUse.isSelected()) {
-			showMsg("이용약관에 동의하세요.");
-			return;
-		}
+	      boolean isUse = idCheck(id);
+	      if (!isUse) {
+	         showMsg("다른 아이디를 입력하세요.");
+	         tfId.requestFocus();
+	         return;
+	      } else if (blankCheck(name) == true || blankCheck(birth) == true || blankCheck(id) == true
+	            || blankCheck(pwd) == true || blankCheck(tel) == true || blankCheck(email) == true) {
+	         System.out.println(blankCheck(name));
+	         showMsg("띄어쓰기에 유의하세요");
+	         return;
+	      } else if (name.trim().isEmpty() || birth.trim().isEmpty() || id.trim().isEmpty() || pwd.trim().isEmpty()
+	            || tel.trim().isEmpty() || email.trim().isEmpty()) {
+	         showMsg("모든 정보를 입력하세요.");
+	         return;
+	      } else if (!cbUse.isSelected()) {
+	         showMsg("이용약관에 동의하세요.");
+	         return;
+	      }
 
-		name = name.trim();
-		birth = birth.trim();
-		id = id.trim();
-		pwd = pwd.trim();
-		tel = tel.trim();
-		email = email.trim();
+		
 
 		/** userTable Hashtable 정보 저장 */
 		User user = new User(name, birth, id, pwd, tel, email);
 		userTable.put(id, user);
 		System.out.println("회원가입 완료! 현재 회원수: " + userTable.size() + "명");
 		showMsg("회원가입이 완료되었습니다!");
+		saveFile("src/FirstProject/user.txt");
+		clearJoinInput();
+		dispose();
 
-	}// ----------------------
+	}// JOIN------------------------------------------------------------------------------------------------------
 
 	/** key값 중복 체크 후 true 반환 */
 	public boolean idCheck(String id) {
@@ -232,5 +239,18 @@ public class Join extends JFrame {
 		my.setSize(400, 600);
 		my.setVisible(true);
 	}
+	
+	   /** 공백 찾는 메소드 */
+	   public boolean blankCheck(String Code) {
+	      for (int i = 0; i < Code.length(); i++) {
+	         if (Code.charAt(i) == ' ') {
+	            return true;
+	         }
+
+	      }
+	      return false;
+
+	   }// -------------blankCheck-----------
+
 
 }

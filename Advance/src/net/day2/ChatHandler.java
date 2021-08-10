@@ -16,7 +16,7 @@ public class ChatHandler extends Thread {
       this.userV=v;
       /////////////////
       userV.add(this);//ChatHandler를 Vector에 저장
-      ///////////////////
+      ///////////////////?
       
       try {
          in=new DataInputStream(sock.getInputStream());

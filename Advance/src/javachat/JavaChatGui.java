@@ -4,23 +4,108 @@
  * and open the template in the editor.
  */
 package javachat;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.event.ItemEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
 /**
  *
  * @author als95
  */
-public class JavaChatGui extends javax.swing.JFrame {
+//[16]
+import javax.swing.text.StyledDocument;
+public class JavaChatGui extends javax.swing.JFrame implements Runnable{
 
-    /**
-     * Creates new form JavaChatGui
-     */
+	private Socket sock;
+	private String userId;
+	private String nick;
+	private String host;
+	private int port=9999;
+	private boolean isStop;
+	private boolean isSendOne;
+	private int fontCr=Color.black.getRGB();//[57]
+	
+	private ObjectOutputStream out;//[24]
+	private ObjectInputStream in;
+	
+	private StyledDocument doc;//[15]
+	
+	public static final int LOGIN=0;//[19]테마에 맞춰서 상수값으로 지정해준것
+	public static final int CHAT_ENTER=1;//[19]
+	public static final int THEME=2;//[19]
+	
+	public static final int LOGOUT=-1;//[19]
+	public static final int EXIT=-2;//[19]
+	
+	//이모티콘을 띄우기 위한 변수//[69]
+	ImageIcon icon1=new ImageIcon("src/images/icon6.png");
+	ImageIcon icon2=new ImageIcon("src/images/icon7.png");
+	ImageIcon icon3=new ImageIcon("src/images/icon5.png");
+	ImageIcon icon4=new ImageIcon("src/images/icon4.png");
+	
+	ImageIcon[] icons= {icon1,icon2,icon3,icon4};
+	JButton [] bt=new JButton[icons.length];
+	JFrame popF=new JFrame(":::::Emoticon:::");
+	
+	
     public JavaChatGui() {
         initComponents();
+        tfHost.setText("localhost");
+        doc=this.tpMsg.getStyledDocument();//[17]???????????????????????????????????????????
+        this.tabEnabled(LOGIN, CHAT_ENTER);//[18]로그인 패널은 활성화, 채팅방 패널은 비활성화
+        this.btLogout.setEnabled(false);//[20]로그아웃 버튼 비활성화
+        tpMsg.setEditable(false);//[51]
+  
+        tfInput.requestFocus();//[51]
+       
+        //이모티콘 프레임 관련--//[70]
+        Container cp=popF.getContentPane();
+        cp.setLayout(new GridLayout(0,4));
+        for(int i=0;i<icons.length;i++) {
+        	bt[i]=new JButton(icons[i]);
+        	cp.add(bt[i]);
+        	bt[i].setActionCommand(String.valueOf(i));
+        	//버튼에 리스너 부착-----------//[72]
+        	bt[i].addActionListener(e->{
+        		try {
+        			System.out.println(e.getActionCommand());
+        			int cmd=Integer.parseInt(e.getActionCommand());//[75]
+        			Message msg=new Message(300, cmd);
+        			out.writeObject(msg);
+        			out.flush();
+      			
+        		}catch(Exception e2) {
+        			System.out.println("이모티콘 보내는 중 예외 발생: "+e2);
+        		}
+        	});
+        }//for--------------
+        
+        //창닫기 이벤트 처리-------------------------------------------[50]
+        this.addWindowListener(new WindowAdapter() {
+        	public void windowClosing(WindowEvent e) {
+        		exitProcess();
+        	}
+        });
     }
-
+  
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -63,7 +148,7 @@ public class JavaChatGui extends javax.swing.JFrame {
         btRename = new javax.swing.JButton();
         btExit = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);//[49]창닫기 버튼을 눌러도 아무일도 일어나지 않게 하겠다.
         setTitle("::TIS.Talk v1.1::");
         setResizable(false);
 
@@ -417,53 +502,459 @@ public class JavaChatGui extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void tfIdActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tfIdActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_tfIdActionPerformed
+    private void tfIdActionPerformed(java.awt.event.ActionEvent evt) {  
+    	
+    	
+    }//----------------------------
 
     private void tfHostActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tfHostActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_tfHostActionPerformed
 
-    private void btExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btExitActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btExitActionPerformed
+    private void btExitActionPerformed(java.awt.event.ActionEvent evt) {//[45]
+        exitProcess();
+    }
 
-    private void tfInputActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tfInputActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_tfInputActionPerformed
-
-    private void btConActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btConActionPerformed
-        // TODO add your handling code here:
+    private void tfInputActionPerformed(java.awt.event.ActionEvent evt) {//[53]
+       //tfInput에 입력한 값 얻기
+    	String sendMsg=tfInput.getText();
+    	//서버에 해당 메시지 보내기
+    	sendMessage(sendMsg);
+    	//tfInput비워주기
+    	tfInput.setText("");
+    	tfInput.requestFocus();
+    }//-------------------------
+    private void btConActionPerformed(java.awt.event.ActionEvent evt) {//[11]  
+       check();
     }//GEN-LAST:event_btConActionPerformed
 
-    private void btResetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btResetActionPerformed
-        // TODO add your handling code here:
+    private void btResetActionPerformed(java.awt.event.ActionEvent evt) {//[52]
+        tfId.setText("");
+        tfNick.setText("");
+        tfHost.setText("localhost");
     }//GEN-LAST:event_btResetActionPerformed
 
-    private void btLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btLogoutActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_btLogoutActionPerformed
+    private void btLogoutActionPerformed(java.awt.event.ActionEvent evt) {//[42]
+    	int yn=showConfirm("로그아웃 할까요?");
+    	if(yn==JOptionPane.YES_OPTION) {
+    		Message data=new Message(800,userId,nick);
+    		try {
+				out.writeObject(data);
+				out.flush();
+			} catch (Exception e) {
+				System.out.println("퇴장 중 예외: "+e);
+			}
+    	}
+    }//-----------------------------------퇴장 버튼
 
-    private void btRenameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btRenameActionPerformed
+    private int showConfirm(String str) {//[42]
+		int n=JOptionPane.showConfirmDialog(this, str,"확인",JOptionPane.YES_NO_OPTION);
+		return n;
+	}
+
+	private void btRenameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btRenameActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_btRenameActionPerformed
 
-    private void btEmotiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEmotiActionPerformed
-        // TODO add your handling code here:
+    private void btEmotiActionPerformed(java.awt.event.ActionEvent evt) {//[71]
+        popF.pack();
+        popF.setLocation(this.getWidth(),0);
+        popF.setVisible(true);
     }//GEN-LAST:event_btEmotiActionPerformed
 
-    private void chkItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_chkItemStateChanged
-        // TODO add your handling code here:
-    }//GEN-LAST:event_chkItemStateChanged
+    private void chkItemStateChanged(java.awt.event.ItemEvent evt) {//[55]
+       int state=evt.getStateChange();
+       if(state==ItemEvent.SELECTED) {
+    	   this.isSendOne=true;//귓속말 인 경우
+       }else {
+    	   this.isSendOne=false;//일반 대화 메시지일 경우
+       }
+       //System.out.println("isSendOne=="+isSendOne);[잘나오나 확인]
+    }
 
-    private void comboColorItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_comboColorItemStateChanged
-        // TODO add your handling code here:
-    }//GEN-LAST:event_comboColorItemStateChanged
+    private void comboColorItemStateChanged(java.awt.event.ItemEvent evt) {//[58]
+    	if(evt.getStateChange()==ItemEvent.SELECTED) {
+    		int idx=comboColor.getSelectedIndex();
+    		if(idx==0) {
+    			fontCr=Color.black.getRGB();
+    		}else if(idx==1) {
+    			fontCr=Color.red.getRGB();
+    		}else if(idx==2) {
+    			fontCr=Color.green.getRGB();
+    		}else if(idx==3) {
+    			fontCr=Color.blue.getRGB();
+    		}else if(idx==4) {
+    			fontCr=Color.cyan.getRGB();
+    		}else if(idx==5) {
+    			fontCr=Color.pink.getRGB();
+    		}
+    		this.lbPreview.setForeground(new Color(fontCr));//[78]
+    	}
+    }
 
     private void userTableMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_userTableMousePressed
         // TODO add your handling code here:
     }//GEN-LAST:event_userTableMousePressed
+    
+    //서버가 보내오는 메시지를 듣고 이를 분석해서 로직을 처리
+    public void run() {//[34]
+    	try {
+    	while(!isStop){
+    		Object obj=in.readObject();
+    		System.out.println("클 ojb=="+obj);
+    		if(obj==null) return;
+    		if(obj instanceof Message) {
+    			Message data=(Message)obj;
+    			parsing(data);
+    		}
+    	}//while--------------
+    	}catch(Exception e) {
+    		System.out.println("클의 run() 예외: "+e);
+    	}
+    }
+	
+	public void parsing(Message msg) {//[35]
+		int code=msg.getCode();
+		switch(code) {
+			case 100:{//입장 메시지 "100|아이디|대화명"//[39]
+				//JTable에 입장한 사람의 정보를 출력
+				this.userModel=(DefaultTableModel)this.userTable.getModel();//[41]
+				Object[] rowData= {msg.getId(),msg.getNick()};
+				userModel.addRow(rowData);
+				}break;
+			case 300:{//"300|보내는사람대화명|이모티콘번호"//[77]
+				int index=msg.getIconCmd();
+				String from=msg.getNick();
+				
+				showEmoticon(from, icons[index]);
+			}break;
+			case 400:{//대화메시지 "400|보내는사람아이디|대화명|메시지|글자색"//[60]
+				String fromId=msg.getId();
+				String fromNick=msg.getNick();
+				String str=msg.getMsg();
+				int fcr=msg.getFontRGB();
+				
+				//showChat(fromNick,fcr,str);
+				showChatStyle(fromNick,fcr,str);//[68]
+			}break;
+			case 500:{//500|보내는 사람 대화명|귓속말메시지//[66]//65/66/다시봐보기
+				String str="["+msg.getNick()+"]님이 보낸 귓속말>>"+msg.getMsg()+"\r\n";
+				showChat(Color.DARK_GRAY,new Color(227,227,0),str);
+				
+			}break;
+			case 700:{
+					showMsg(nick+"이란 대화명은 이미 사용 중 입니다.");
+					exitChat(LOGOUT);
+					//대화명이 중복되면 퇴장 처리하는 메소드 호출
+
+				}break;
+			case 800:{//800|퇴장하는사람아이디|대화명//[43]
+				logout(msg.getId(), msg.getNick(), LOGOUT);
+			}break;
+			case 900:{//800|퇴장하는사람아이디|대화명
+				logout(msg.getId(), msg.getNick(), EXIT);
+			}break;//[48]
+		}//switch-------------
+	}//parsing()----------------------
+	
+	public void logout(String id, String nick, int mode) {//[43]
+		//1. 퇴장하는 클라이언트가 본인이 아닐 경우
+		//퇴장하는 사람의 정보를 userModel에서 제거
+		String tmpId="", tmpNick="";
+				for(int i=0;i<userModel.getRowCount();i++) {
+			tmpId=userModel.getValueAt(i, 0).toString();//받는 값이 object이니까 toString으로 받는다
+			if(tmpId.equals(id)) {
+					tmpNick=nick;
+					userModel.removeRow(i);//해당 행을 삭제
+					break;
+				}//if
+			}//for
+				if(mode==LOGOUT) {
+					String str=tmpId+"["+tmpNick+"]님이 퇴장하였습니다.\r\n";
+					//tpMsg.setText(str);//변경 예정
+					showChat(Color.magenta, Color.lightGray,str);//[62]
+				}else if(mode==EXIT) {
+					String str=tmpId+"["+tmpNick+"]님이 접속을 끊었습니다.\r\n";
+					//tpMsg.setText(str);
+					showChat(Color.magenta, Color.yellow,str);//[62]
+				}
+		
+		//2. 퇴장하는 클라이언트가 본인일 경우
+				if(id.equals(this.userId)) {
+					isStop=true;//리스너 스레드 중지
+					exitChat(mode);//LOGOUT
+				}
+	}//logout----------------------------------------------------------------------------
+	
+	/**로그아웃, 종료 처리하는 메소드*/
+	public void exitChat(int mode) {//[36]
+	
+		//mode: LOGOUT, EXIT
+		isStop=true;
+		lbId.setText("");
+		lbNick.setText("");
+		try {
+			if(out!=null) out.close();
+			if(in !=null) in.close();
+			if(sock!=null) {
+				sock.close();
+				sock=null;
+			}
+		} catch (IOException e) {
+			System.out.println("exitChat()에서 예외: "+e);
+		}
+		switch(mode) {
+			case LOGOUT:{//퇴장인 경우
+				this.tabEnabled(LOGIN, CHAT_ENTER);//로그인 패널 활성화, 채팅방 패널은 비활성화
+				
+				//테이블 비워주기//[44]
+				if(userModel!=null) {
+					//for(int i=0;i<userModel.getRowCount();i++) {//앞에서부터 삭제하면 삭제시 행의 수를 바뀌어서 오류가 날수있다 그래서 뒤에서부터 삭제해주는게 좋다
+					for(int i=userModel.getRowCount()-1;i>=0;i--) {
+						userModel.removeRow(i);
+					}//for-----------------------------
+				}//if------------------------
+				//////////////////
+			}break;
+			case EXIT:{//종료인 경우
+				this.dispose();
+				System.exit(0);
+			}break;
+		}
+	}
+	
+	public void exitProcess() {//[46]
+		int yn=showConfirm("종료 할까요?");
+		if(yn==JOptionPane.NO_OPTION)return;
+		//1. 채팅 서버에 접속하고 종료하는 경우
+		if(sock!=null&& !sock.isClosed()) {
+			try {
+				Message msg=new Message(900,userId,nick);
+				out.writeObject(msg);
+				out.flush();	
+			} catch (Exception e) {
+				System.out.println("시스템 종료중 예외: "+e);
+				System.exit(0);
+			}
+			
+		}else {
+		//2. 채팅 서버에 접속하지 않고 종료하는 경우
+			System.exit(0);
+		}
+	}
+	
+	/**서버쪽에 메시지를 보내는 메소드*/
+	public void sendMessage(String msg) {//[54]=>[56]
+		try {
+			if(isSendOne) {//[56]=>[64]
+			//1. 귓속말인 경우=>500|귓속말 보내는 사람의 대화명|귓속말 메시지
+				int row=userTable.getSelectedRow();
+				//선택한 행의 인덱스를 반환. 선택한 행이 없다면 -1을 반환
+				if(row<0) {
+					showMsg("귓속말할 대상을 선택하세요");
+					return;
+				}
+				String toNick=userTable.getValueAt(row, 1).toString();
+				
+				Message data=new Message();
+				data.setCode(500);
+				data.setNick(toNick);//한사람한테만 보낼거야
+				data.setMsg(msg);
+				
+				out.writeObject(data);
+				out.flush();
+				
+				String str="["+toNick+"]에게 보낸 귓속말>>"+msg+"\r\n";
+				showChat(Color.cyan, new Color(227,0,227), str);
+				
+			}else {
+				//2.일반 대화 메시지인 경우=>400|메시지|글꼴색
+				Message data=new Message(400, msg,fontCr);
+				out.writeObject(data);
+				out.flush();
+			}
+			
+		}catch(IOException e){
+			System.out.println("sendMessage()예외: "+e);
+		}
+	}
+	/**클이 전달한 메시지를 tpMsg에 스타일을 적용하여 표현하는 메소드*/
+	public void showChat(String from, int fontRGB, String fromMsg) {//[61]//주말공부
+		synchronized (this) {
+			SimpleAttributeSet attr=new SimpleAttributeSet();
+			StyleConstants.setForeground(attr,  new Color(fontRGB));
+			StyleConstants.setFontSize(attr, 16);
+			StyleConstants.setFontFamily(attr, "sans-serif");
+			
+			String str=from+">>"+fromMsg+"\r\n";
+			
+			int pos=doc.getEndPosition().getOffset()-1;
+			tpMsg.setCaretPosition(pos);
+			
+			try {
+				doc.insertString(pos, str, attr);
+			} catch (BadLocationException e) {
+				
+			}
+		}
+	}
+	
+	//
+	public synchronized void showChatStyle(String from, int fontRGB, String fromMsg) {//[67]메세지 모양 카카오톡처럼 만들기
+		String str="   "+from+">>"+fromMsg+"  \r\n";
+		JLabel lb=new JLabel(str);
+		lb.setForeground(new Color(fontRGB));
+		lb.setPreferredSize(new Dimension(700,50));
+		lb.setOpaque(true);//색변환을 위한 true값
+		
+		SimpleAttributeSet attr=null;
+		if(from.equals(this.nick)){
+			//보낸사람이 나라면==> 오른쪽 정렬
+			attr=new SimpleAttributeSet();
+			StyleConstants.setAlignment(attr, StyleConstants.ALIGN_RIGHT);
+			lb.setBackground(Color.yellow);
+		}else{
+			//보낸사람이 다른 사람이라면==>왼쪽 정렬
+			attr=new SimpleAttributeSet();
+			StyleConstants.setAlignment(attr, StyleConstants.ALIGN_LEFT);
+			lb.setBackground(new Color(80,125,200));
+		}
+		this.setStyle(lb, str, attr);
+		
+		
+	}
+	
+	public synchronized void showChatStyle(String who, Color bgCr, Color fgCr, String msg) {//[67]
+		
+	}
+	
+	public void setStyle(JLabel lb, String msg, SimpleAttributeSet attr) {//[67]
+		int pos=doc.getEndPosition().getOffset()-1;
+		tpMsg.setCaretPosition(pos);//스크롤 내리기
+		tpMsg.insertComponent(lb);//라벨과 동시에 메시지 보여주기
+		String enter="\r\n";
+		pos=doc.getEndPosition().getOffset()-1;//초기화
+		
+		try {
+			doc.insertString(pos, enter, attr);
+		} catch (BadLocationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		//문단 정렬방식 적용
+		doc.setParagraphAttributes(pos+1, msg.length(), attr, true);
+		tpMsg.setCaretPosition(pos+1);
+	}
+	/**텍스트페인에 이모티콘을 출력해 보여주는 메소드*///[68]
+	public void showEmoticon(String from, ImageIcon icon) {
+		String str="["+from+"]님\r\n";
+		JLabel lb=new JLabel(str, icon, JLabel.CENTER);
+		lb.setPreferredSize(new Dimension(700,200));
+		lb.setHorizontalTextPosition(JLabel.CENTER);//텍스트 위치 잡기
+		lb.setVerticalTextPosition(JLabel.TOP);
+		
+		SimpleAttributeSet attr=null;
+		if(from.equals(this.nick)) {
+			attr=new SimpleAttributeSet();
+			StyleConstants.setAlignment(attr, StyleConstants.ALIGN_RIGHT);
+		}else {
+			attr=new SimpleAttributeSet();
+			StyleConstants.setAlignment(attr, StyleConstants.ALIGN_LEFT);
+		}
+		this.setStyle(lb, str, attr);
+	}
+	
+	public void showChat(Color fgCr, Color bgCr, String msg) {//[63]
+		synchronized (this) {//동기화///////////////////////////////////////////?
+			SimpleAttributeSet attr=new SimpleAttributeSet();
+			StyleConstants.setForeground(attr,  fgCr);
+			StyleConstants.setBackground(attr,  bgCr);
+			StyleConstants.setFontSize(attr, 16);
+			StyleConstants.setFontFamily(attr, "sans-serif");
+			
+			int pos=doc.getEndPosition().getOffset()-1;
+			tpMsg.setCaretPosition(pos);
+			
+			try {
+				doc.insertString(pos, msg, attr);
+			} catch (BadLocationException e) {
+				
+			}
+		}
+	}
+	
+	public void chatEnter() {
+		try {//[23]
+			sock=new Socket(host, port);//연결이 됐다는건 서버와 연결이 잘 이루어졌다는 것
+			tpMsg.setText("##채팅 서버에 접속했습니다.\r\n");
+			
+			out=new ObjectOutputStream(sock.getOutputStream());
+			in=new ObjectInputStream(sock.getInputStream());
+			
+			//리스너 스레드를 생성, 동작->접속하자마자 누가 메세지를 보내올 수도 있기 때문에//[24]
+			isStop=false;//[32]
+			Thread listener=new Thread(this);
+			listener.start();//듣는 쓰레드 동작
+			
+			//입장 메시지를 서버에 보내자. "100|아이디|대화명"//[24]
+			Message data=new Message(100,userId,nick);
+			out.writeObject(data);//아웃풋 스트립을 통해 데이터를 보내기
+			out.flush();
+			
+			//채팅방 활성화, 로그인 패널은 비활성화
+			this.tabEnabled(CHAT_ENTER, LOGIN);//앞에꺼는 활성화, 뒤에는 비활성화[24]
+			
+			//MyInfo셋팅[24]옆에 창에 아디 정보 보여주기
+			this.lbId.setText(userId);
+			this.lbNick.setText(nick);
+			
+			this.setTitle(this.getTitle()+" ["+nick+"]");
+			
+		} catch (UnknownHostException e) {
+			showMsg("호스트명를 확인하세요.");
+			tfHost.requestFocus();
+		} catch (IOException e) {
+			System.out.println("chatEnter() 예외: "+e);
+		}//호스트명 받아서 port로
+	}//chatEnter()------------------------
+	
+	public void check() {//[12]로그인시 사용자가 입력한 값을 서버로 보내기위한 행동
+		//사용자가 입력한 값 얻기//로그인한 내용 서버로 보내기 위해
+    	userId=tfId.getText();
+    	nick=tfNick.getText();
+    	this.host=tfHost.getText();
+    	//유효성 체크
+    	if(userId==null||nick==null||host==null||userId.trim().isEmpty()
+    			||nick.trim().isEmpty()||host.trim().isEmpty()) {
+    		showMsg("아이디,대화명,접속할 서버의 호스트명을 입력하세요");
+    		tfId.requestFocus();
+    		
+    		return;
+    	}
+    	//채팅방에 입장하는 메소드 호출
+    	chatEnter();//[22]
+	}
+	
+	private void showMsg(String str) {//[13]
+		JOptionPane.showMessageDialog(this, str);
+		
+	}
+
+	public void tabEnabled( int enabled, int disabled) {//[14]로그인 하면 로그인화면과 채팅방화면설정에 관한 내용
+		//enabled:0(로그인)|1(채팅방) (탭의 인덱스번호),
+		tabP.setEnabledAt(enabled, true);
+		tabP.setEnabledAt(disabled, false);
+		if(enabled==LOGIN){//[21]
+			tfId.requestFocus();//[21]
+			btLogout.setEnabled(false);//[21]로그아웃 버튼 비활성화
+		}else if(enabled==CHAT_ENTER) {//[21]
+			tfInput.requestFocus();//[21]
+			btLogout.setEnabled(true);//로그아웃 버튼 활성화//[21]
+		}
+		//활성화된 탭을 선택하도록 설정
+		tabP.setSelectedIndex(enabled);//자동으로 채팅창으로 넘거가게//[21]
+	}
 
     /**
      * @param args the command line arguments
@@ -533,5 +1024,6 @@ public class JavaChatGui extends javax.swing.JFrame {
     private javax.swing.JTextField tfNick;
     private javax.swing.JTextPane tpMsg;
     private javax.swing.JTable userTable;
+    private javax.swing.table.DefaultTableModel userModel;//[40]
     // End of variables declaration//GEN-END:variables
 }

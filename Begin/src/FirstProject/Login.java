@@ -71,7 +71,7 @@ public class Login extends JPanel {
 		LoginHandler lh = new LoginHandler(mainF);
 		lbJoin.addMouseListener(lh);
 		lbLogin.addMouseListener(lh);
-
+///////////////////////////////////////////////////////////////////////////////////////////////////[gui]////////////////
 	}// 생성자------
 
 	/** 알림창 showMsg() */
@@ -82,7 +82,7 @@ public class Login extends JPanel {
 	/** 로그인 처리를 하는 메소드 */
 	public void loginCheck() {
 		// mainF.setTitle("loginCheck");
-		// 1. tfId에 입력한 값 받기
+		// 1. tfId에 입력한 값 받기""
 		String uid = tfId.getText();
 
 		// 2. tfPwd에 입력한 값 받기
@@ -98,7 +98,6 @@ public class Login extends JPanel {
 		uid = uid.trim();
 		upw = upw.trim();
 
-		// mainF.setTitle(uid+"/"+upw);
 		boolean isExist = joinF.userTable.containsKey(uid);
 		// 아이디가 존재하는지 체크
 		if (!isExist) {

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="shop.mapper.ProductMapper">
+   <select id="totalCount" resultType="int">
+      select count(*) cnt from product
+   </select>
+   
+   <sql id="product_column">
+	pnum, upCg_code, downCg_code, 
+	pname, price, saleprice, pqty, point,
+	pspec, pcontents, pcompany, pindate,
+	nvl(pimage1,'noimage.png') pimage1,
+	nvl(pimage2,'noimage.png') pimage2,
+	nvl(pimage3,'noimage.png') pimage3
+   </sql>
+   
+   <!--  pspec(HIT,NEW,BEST) 별로 상품목록 가져오기 -->
+   <select id="selectByPspec" resultType="shop.model.ProductVO" 
+   parameterType="java.lang.String">
+      select 
+       <include refid="product_column"/>
+      from product where pspec=#{value}
+      </select>
+      <!-- select한 결과 테이블의 레코드를 ProductVO에 담아준다. 
+         전제조건 db table의 컬럼명과 ProductVO의 property(멤버변수)명이 동일해야 가능하다-->
+         
+   <select id="selectByPnum" resultType="Product" parameterType="string">
+   		select 
+   		 <include refid="product_column"/>
+   		from product where pnum=#{value}
+   </select>      
+</mapper>
+
+
+
